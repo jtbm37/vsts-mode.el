@@ -32,7 +32,6 @@
   (let ((base-url (vsts/get-url vsts-builds-api t))
 	(params "&$top=10"))
     (vsts--submit-request (concat base-url params) '(lambda (data)
-						      ;; (message "getting builds %s" data)
 						      (setq vsts-builds (vsts/parse-builds data))) "GET" nil nil)
     vsts-builds))
 
@@ -43,7 +42,7 @@
 	(result-data (alist-get 'result data))
 	build)
     (push (assoc 'status data) build)
-    (push (cons 'result (if (equal result-data "succeeded") "✓" "✗")) build)
+    (push (cons 'result (when finish-at (if (equal result-data "succeeded") "✓" "✗"))) build)
     (push (assoc 'buildNumber data) build)
     (setq branch (replace-regexp-in-string "refs/pull/\\([0-9]*?\\)/merge" "PR\\1" branch nil nil 0))
     (setq branch (replace-regexp-in-string "refs/heads/" "" branch))
@@ -56,14 +55,15 @@
 
 (defun time-to-ago (datetime)
   "Returns how long ago `datetime' was."
-  (let ((ago (time-to-seconds (time-since (date-to-time datetime)))))
-    (cond ((and (> ago 60) (< ago 3600))
-	   (format "%s minutes ago" (round (/ ago 60))))
-	  ((and (> ago 3600) (< ago 86400))
-	   (format "%s hours ago" (round (/ ago 3600))))
-	  (t
-	   (format "%s days ago" (round (/ ago 86400)))))))
-	
+  (when datetime
+    (let ((ago (time-to-seconds (time-since (date-to-time datetime)))))
+      (cond ((and (> ago 60) (< ago 3600))
+	     (format "%s minutes ago" (round (/ ago 60))))
+	    ((and (> ago 3600) (< ago 86400))
+	     (format "%s hours ago" (round (/ ago 3600))))
+	    (t
+	     (format "%s days ago" (round (/ ago 86400))))))))
+
 (defun vsts/parse-builds (response)
   "Reads response and returns a list of builds in `'response"
   (let ((values (cdr (cadr response)))
