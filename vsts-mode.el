@@ -55,8 +55,6 @@
   :type 'string
   :group 'vsts)
 
-(defvar vsts-builds nil
-  "Contains all builds for the builds page")
 
 (defconst vsts-base-uri "https://%s.visualstudio.com/DefaultCollection/")
 (defconst vsts-workitems-api "_apis/wit/WorkItems")

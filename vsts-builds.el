@@ -24,15 +24,16 @@
 
 ;;; Code:
 
+(defvar vsts-builds nil
+  "Contains all builds for the builds page")
 
 (defun vsts/get-builds ()
   "Displays all builds"
   (let ((base-url (vsts/get-url vsts-builds-api t))
 	(params "&$top=10"))
     (vsts--submit-request (concat base-url params) '(lambda (data)
-						      ;; (message "getting builds")
-						      (setq vsts-builds (vsts/parse-builds data))
-						      ) "GET" nil nil)
+						      ;; (message "getting builds %s" data)
+						      (setq vsts-builds (vsts/parse-builds data))) "GET" nil nil)
     vsts-builds))
 
 (defun vsts/parse-build-item (data)
