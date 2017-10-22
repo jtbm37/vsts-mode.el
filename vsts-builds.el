@@ -24,6 +24,9 @@
 
 ;;; Code:
 
+(require 'vsts-git)
+(require 'vsts-build-definitions)
+
 (defvar vsts-builds nil
   "Contains all builds for the builds page")
 
@@ -98,11 +101,6 @@
 	    (requestedBy nil 20 t))
   ;; :sort-key '(name)
   )
-
-(defun vsts/show-builds ()
-  "Shows list of builds in `vsts-project'"
-  (interactive)
-  (bui-get-display-entries 'builds 'list))
 
 (defun builds-build-current-project? (entry)
   "Returns t if builds is in current project"

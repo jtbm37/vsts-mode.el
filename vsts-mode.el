@@ -25,6 +25,8 @@
 ;;; Code:
 
 (require 'bui)
+(require 'vsts-builds)
+(require 'dash)
 
 (defgroup vsts nil
   "Major mode for vsts."
@@ -60,6 +62,23 @@
 (defconst vsts-workitems-api "_apis/wit/WorkItems")
 (defconst vsts-builds-api "_apis/build/builds")
 (defconst vsts-build-definitions-api "_apis/build/definitions")
+
+(defun vsts/set-credentials ()
+  "Sets all necessary parameters for querying vsts. The values are fetched from .authinfo.gpg"
+  (unless vsts-token
+    (-if-let* ((entry (nth 0 (auth-source-search :max 1 :host "vsts")))
+	       (login (plist-get entry :user))
+	       (project (plist-get entry :project))
+	       (repo (plist-get entry :repo))
+	       (secretfun (plist-get entry :secret))
+	       (secret (funcall secretfun)))
+	(progn
+	  (setq vsts-instance login
+		vsts-token secret
+		vsts-project project
+		vsts-repository repo))
+      (user-error "VSTS credentials not found. Please add a `vsts' entry into your .authinfo.gpg file."))))
+
 
 (defun vsts/get-url (area &optional project-p api-version)
   (let ((project (when project-p
@@ -105,6 +124,15 @@
     (define-key map (kbd "C-c C-c") 'vsts/load-items)
     map)
   "Keymap for vsts mode.")
+
+;;;###autoload
+(defun vsts/show-builds ()
+  "Shows list of builds in `vsts-project'"
+  (interactive)
+  ;; this will be moved in the main screen when done
+  ;; For now this is the main entry point of the app
+  (vsts/set-credentials)
+  (bui-get-display-entries 'builds 'list))
 
 (provide 'vsts-mode)
 ;;; vsts-mode.el ends here
