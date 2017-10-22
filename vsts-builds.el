@@ -101,6 +101,7 @@
 
 (defun vsts/show-builds ()
   "Shows list of builds in `vsts-project'"
+  (interactive)
   (bui-get-display-entries 'builds 'list))
 
 (defun builds-build-current-project? (entry)
@@ -140,6 +141,26 @@
 			     (message "Queued build %s on %s" build-def branch))
 			  "POST" req-params)))
 
+(defun builds-list-cancel-build ()
+  "Cancels current selected build"
+  (interactive)
+  (let* ((id (bui-list-current-id))
+	 (status (alist-get 'status (bui-list-current-entry))))
+    (if (string= status "inProgress")
+	(when (yes-or-no-p (message "Cancel build %s?" id))
+	  (vsts/cancel-build id))
+      (error (format "Cannot cancel build %s because it is not in progress" id)))))
+
+(defun vsts/cancel-build (build-id)
+  "Cancels build `build-id'"
+  (let ((params '((status . "cancelling"))))
+    (vsts--submit-request (vsts/get-url (concat vsts-builds-api "/" (number-to-string build-id)) t)
+			  '(lambda (data)
+			     (message "Cancelled %s" data))
+			  "PATCH"
+			  params
+			  nil)))
+
 (defun builds-info-entries-function (&rest args)
   "Returns the details for the info entry"
   (list args))
@@ -150,7 +171,8 @@
 
 (let ((map builds-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
-  (define-key map (kbd "b") 'vsts/queue-build))
+  (define-key map (kbd "b") 'vsts/queue-build)
+  (define-key map (kbd "c") 'builds-list-cancel-build))
 
 (provide 'vsts-builds)
 ;;; vsts-builds.el ends here
