@@ -27,6 +27,9 @@
 (require 'vsts-git)
 (require 'vsts-build-definitions)
 
+(defconst vsts-build-artifacts-api "_apis/build/builds/%s/artifacts")
+(defconst vsts-build-artifact-content-api "_apis/resources/Containers")
+
 (defvar vsts-builds nil
   "Contains all builds for the builds page")
 
@@ -115,8 +118,36 @@
 (bui-define-interface builds info
   :get-entries-function #'builds-info-entries-function
   :format '((buildNumber format (format))
+	    builds-info-insert-artifact
 	    nil))
 
+(defun builds-info-insert-artifact (entry)
+  "Inserts artifact details in builds info panel"
+  (when-let
+      ((build-id (alist-get 'id entry))
+       (artifact (vsts/get-build-artifact build-id))
+       (filename (replace-regexp-in-string "drop/" "" (alist-get 'path artifact))))
+    (bui-format-insert "Artifact" 'bui-info-param-title bui-info-param-title-format)
+    (bui-format-insert filename)
+    (bui-insert-indent)
+    (bui-insert-action-button "Download"
+			      (lambda (f)
+				(browse-url (alist-get 'contentLocation (button-get f 'file))))
+			      "Download this artifact"
+			      'file artifact)))
+
+(defun vsts/get-build-artifact (build)
+  "Returns artifacts of `build'"
+  (when-let ((base-url (vsts/get-url (format vsts-build-artifacts-api build) t "2.0"))
+	     (response (request-response-data (vsts--submit-request base-url nil "GET" nil nil)))
+	     (hasData (> (alist-get 'count response) 0))
+	     (value (alist-get 'value response))
+	     (container (alist-get 'resource (elt value 0)))
+	     (container-id (replace-regexp-in-string "#/\\([0-9]*?\\)/drop" "\\1" (alist-get 'data container)))
+	     (artifact-response (request-response-data (vsts--submit-request (format "https://%s.visualstudio.com/%s/%s?itemPath=drop" vsts-instance vsts-build-artifact-content-api container-id) nil "GET" nil nil)))
+	     (artifact-value (alist-get 'value artifact-response))
+	     )
+    (elt (remove-if-not '(lambda (x) (string= (alist-get 'itemType x) "file")) artifact-value) 0))) 
 (when (symbolp 'evil-emacs-state-modes)
   (add-to-list 'evil-emacs-state-modes 'builds-list-mode)
   (add-to-list 'evil-emacs-state-modes 'builds-info-mode))
