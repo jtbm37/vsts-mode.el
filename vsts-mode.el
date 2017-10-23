@@ -90,7 +90,7 @@
   (if (require 'request nil 'noerror)
       (lexical-let* ((c callback)
 		     (type (or type "POST"))
-		     (token (concat  "Basic " vsts-token)))
+		     (token (concat  "Basic " (base64-encode-string (concat ":" vsts-token)))))
         (request url
                  :type type
 		 :headers `(("Authorization" . ,token)
