@@ -30,13 +30,18 @@
 (defconst vsts-build-artifacts-api "_apis/build/builds/%s/artifacts")
 (defconst vsts-build-artifact-content-api "_apis/resources/Containers")
 
+(defcustom vsts-builds-list-top 10
+  "Sets the maximum number of items to retrieve in list"
+  :type 'number
+  :group 'vsts)
+
 (defvar vsts-builds nil
   "Contains all builds for the builds page")
 
 (defun vsts/get-builds ()
   "Displays all builds"
   (let ((base-url (vsts/get-url vsts-builds-api t))
-	(params "&$top=10"))
+	(params (format "&$top=%s" vsts-builds-list-top)))
     (vsts--submit-request (concat base-url params) '(lambda (data)
 						      (setq vsts-builds (vsts/parse-builds data))) "GET" nil nil)
     vsts-builds))
@@ -211,10 +216,16 @@
   "Display 'info' for builds in ids"
   (bui-get-display-entries 'builds 'info (bui-list-current-entry)))
 
+(defun vsts/set-builds-list-max-items ()
+  "Prompts to set `vsts-builds-list-top'"
+  (interactive)
+  (setq vsts-builds-list-top (read-number (format "Top (%s): " vsts-builds-list-top))))
+
 (let ((map builds-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
   (define-key map (kbd "b") 'vsts/queue-build)
-  (define-key map (kbd "c") 'builds-list-cancel-build))
+  (define-key map (kbd "c") 'builds-list-cancel-build)
+  (define-key map (kbd "t") 'vsts/set-builds-list-max-items))
 
 (provide 'vsts-builds)
 ;;; vsts-builds.el ends here
