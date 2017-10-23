@@ -52,6 +52,8 @@
       (push (assoc 'status data) build))
     (push (cons 'result (when finish-at (if (equal data-result "succeeded") "✓" "✗"))) build)
     (push (assoc 'buildNumber data) build)
+    (push (assoc 'startTime data) build)
+    (push (assoc 'finishTime data) build)
     (setq branch (replace-regexp-in-string "refs/pull/\\([0-9]*?\\)/merge" "PR\\1" branch nil nil 0))
     (setq branch (replace-regexp-in-string "refs/heads/" "" branch))
     (push (cons 'sourceBranch branch) build)
@@ -119,7 +121,16 @@
   :get-entries-function #'builds-info-entries-function
   :format '((buildNumber format (format))
 	    builds-info-insert-artifact
+	    nil
+	    builds-info-insert-duration
 	    nil))
+
+(defun builds-info-insert-duration (entry)
+  "Inserts the build's duration"
+  (let ((start (alist-get 'startTime entry))
+	(end (alist-get 'finishTime entry)))
+    (bui-format-insert "Ran for" 'bui-info-param-title bui-info-param-title-format)
+    (bui-format-insert (format "%s minutes" (/ (time-to-seconds (time-subtract (date-to-time end) (date-to-time start))) 60)))))
 
 (defun builds-info-insert-artifact (entry)
   "Inserts artifact details in builds info panel"
