@@ -146,7 +146,7 @@
     (bui-format-insert "Artifact" 'bui-info-param-title bui-info-param-title-format)
     (bui-format-insert filename)
     (bui-insert-indent)
-    (bui-insert-action-button "Download"
+    (bui-insert-action-button " Download "
 			      (lambda (f)
 				(browse-url (alist-get 'contentLocation (button-get f 'file))))
 			      "Download this artifact"
