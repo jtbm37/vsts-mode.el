@@ -25,6 +25,7 @@
 ;;; Code:
 
 (defconst vsts-git-branch-api "_apis/git/repositories/%s/refs/heads")
+(defconst vsts-git-pullrequests-api "_apis/git/repositories/%s/pullrequests")
 (defconst vsts-git-repository-api "_apis/git/repositories/")
 
 (defvar vsts-git-repository nil
@@ -37,8 +38,7 @@
   "Gets the current repository from remote if nil, otherwise return `vsts-git-repository'"
   (unless vsts-git-repository
     (let ((base-url (vsts/get-url (concat vsts-git-repository-api vsts-repository) t "1.0")))
-      (message "Querying %s" base-url)
-      (vsts--submit-request base-url '(lambda (data) (setq vsts-git-repository data)) "GET" nil nil)))
+      (setq vsts-git-repository (request-response-data (vsts--submit-request base-url nil "GET" nil nil)))))
   vsts-git-repository)
 
 (defun vsts/git-get-branches ()
@@ -51,6 +51,44 @@
 (defun vsts/get-git-branches-selection ()
   "Returns list of branches to feed a user selection"
   (mapcar '(lambda (x) (propertize (alist-get 'name x) 'property (alist-get 'objectId x))) (cdr (car (vsts/git-get-branches)))))
+
+(defun vsts/git-get-pullrequests ()
+  "Returns all pull requests in `vsts-repository'"
+  (let ((base-url (vsts/get-url (format vsts-git-pullrequests-api (alist-get 'id  (vsts/git-get-repository))) t "3.0-preview")))
+    (request-response-data (vsts--submit-request base-url nil "GET" nil nil))))
+
+(defun vsts/git-parse-pullrequest (pr)
+  "Parses a pull request and returns relevant properties for the list"
+  (let (result)
+    (push (cons 'id (alist-get 'pullRequestId pr)) result)
+    (push (cons 'createdBy (alist-get 'displayName (alist-get 'createdBy pr))) result)
+    (push (assoc 'status pr) result)
+    (push (cons 'createdAgo (time-to-ago (alist-get 'creationDate pr))) result)
+    (push (assoc 'title pr) result)
+    (push (cons 'sourceBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'sourceRefName pr))) result)
+    (push (cons 'destBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'targetRefName pr))) result)
+    result))
+
+(bui-define-interface vsts-pullrequests list
+  :buffer-name "*Pull Requests*"
+  ;; :titles '(
+  ;; 	    )
+  ;; :describe-function #'vsts/builds-list-describe
+  :get-entries-function '(lambda ()
+			   (mapcar 'vsts/git-parse-pullrequest (alist-get 'value (vsts/git-get-pullrequests))))
+  :format ''((id nil 5 t)
+	     (createdBy nil 15 t)
+	     (title nil 80 t)
+	     (createdAgo nil 15 t)
+	     (sourceBranch nil 20 t)
+	     (destBranch nil 20 t)))
+
+;;;###autoload
+(defun vsts/show-pullrequests ()
+  "Shows list of pull requests in `vsts-repository'"
+  (interactive)
+  (vsts/set-credentials)
+  (bui-get-display-entries 'vsts-pullrequests 'list))
 
 (provide 'vsts-git)
 ;;; vsts-git.el ends here
