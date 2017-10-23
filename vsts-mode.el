@@ -3,6 +3,8 @@
 ;; Copyright (C) 2017  jtbm37
 
 ;; Author: jtbm37
+;; Version: 0.0.1
+;; Package-Requires: ((emacs "24.1") (bui "1.1.0") (dash "2.13.0")
 ;; Keywords: extensions
 
 ;; This program is free software; you can redistribute it and/or modify
