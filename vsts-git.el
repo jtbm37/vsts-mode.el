@@ -52,9 +52,9 @@
   "Returns list of branches to feed a user selection"
   (mapcar '(lambda (x) (propertize (alist-get 'name x) 'property (alist-get 'objectId x))) (cdr (car (vsts/git-get-branches)))))
 
-(defun vsts/git-get-pullrequests ()
+(defun vsts/git-get-pullrequests (&optional id)
   "Returns all pull requests in `vsts-repository'"
-  (let ((base-url (vsts/get-url (format vsts-git-pullrequests-api (alist-get 'id  (vsts/git-get-repository))) t "3.0-preview")))
+  (let ((base-url (vsts/get-url (concat (format vsts-git-pullrequests-api (alist-get 'id  (vsts/git-get-repository))) (when id (format "/%s" id))) t "3.0-preview")))
     (request-response-data (vsts--submit-request base-url nil "GET" nil nil))))
 
 (defun vsts/git-parse-pullrequest (pr)
@@ -75,7 +75,7 @@
   :buffer-name "*Pull Requests*"
   ;; :titles '(
   ;; 	    )
-  ;; :describe-function #'vsts/builds-list-describe
+  :describe-function #'vsts-pullrequests-list-describe
   :get-entries-function '(lambda ()
 			   (mapcar 'vsts/git-parse-pullrequest (alist-get 'value (vsts/git-get-pullrequests))))
   :format '((id nil 5 t)
@@ -85,14 +85,26 @@
 	     (sourceBranch nil 20 t)
 	     (destBranch nil 20 t)))
 
+(defun vsts-pullrequests-list-describe (&rest pr)
+  "Display 'info' buffer for vsts-pullrequests list."
+  (bui-get-display-entries 'vsts-pullrequests 'info (cons 'id pr)))
+
+(bui-define-interface vsts-pullrequests info
+  :buffer-name "*Pull Request Info*"
+  :get-entries-function '(lambda (&rest args)
+			   (let ((pr (cdr (vsts/git-get-pullrequests (cadr args)))))
+			     (list (list (assoc 'title pr)))))
+  :format '((title format (format))
+	    nil))
+
+
 (let ((map vsts-pullrequests-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
   (define-key map (kbd "C-o") 'vsts/open-item))
 
 (when (symbolp 'evil-emacs-state-modes)
   (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-list-mode)
-  ;; (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-info-mode)
-  )
+  (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-info-mode))
 
 ;;;###autoload
 (defun vsts/show-pullrequests ()
