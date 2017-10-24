@@ -51,6 +51,7 @@
   (let ((branch (alist-get 'sourceBranch data))
 	(finish-at (alist-get 'finishTime data))
 	(data-result (alist-get 'result data))
+	(id (assoc 'id data))
 	build)
     (if (string= data-result "canceled")
 	(push (cons 'status "canceled") build)
@@ -66,7 +67,8 @@
     (push (assoc 'name (assoc 'definition data)) build)
     (push (cons 'requestedBy (alist-get 'displayName (alist-get 'requestedBy data))) build)
     (push (cons 'completed (time-to-ago finish-at)) build)
-    (push (assoc 'id data) build)))
+    (push (cons 'url (vsts/get-web-url (format "/_build/index?buildId=%s&_a=summary" (cdr id)))) build)
+    (push id build)))
 
 (defun time-to-ago (datetime)
   "Returns how long ago `datetime' was."
@@ -225,7 +227,8 @@
   (define-key map (kbd "q") 'quit-window)
   (define-key map (kbd "b") 'vsts/queue-build)
   (define-key map (kbd "c") 'builds-list-cancel-build)
-  (define-key map (kbd "t") 'vsts/set-builds-list-max-items))
+  (define-key map (kbd "t") 'vsts/set-builds-list-max-items)
+  (define-key map (kbd "C-o") 'vsts/open-item))
 
 (provide 'vsts-builds)
 ;;; vsts-builds.el ends here

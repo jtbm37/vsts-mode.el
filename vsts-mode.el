@@ -81,6 +81,9 @@
 		vsts-repository repo))
       (user-error "VSTS credentials not found. Please add a `vsts' entry into your .authinfo.gpg file."))))
 
+(defun vsts/get-web-url (area)
+  "Returns the base url for the web interface"
+  (concat (format "https://%s.visualstudio.com/%s" vsts-instance vsts-project) area))
 
 (defun vsts/get-url (area &optional project-p api-version)
   (let ((project (when project-p
