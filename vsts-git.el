@@ -59,12 +59,14 @@
 
 (defun vsts/git-parse-pullrequest (pr)
   "Parses a pull request and returns relevant properties for the list"
-  (let (result)
-    (push (cons 'id (alist-get 'pullRequestId pr)) result)
+  (let ((pr-id (alist-get 'pullRequestId pr))
+	result)
+    (push (cons 'id pr-id) result)
     (push (cons 'createdBy (alist-get 'displayName (alist-get 'createdBy pr))) result)
     (push (assoc 'status pr) result)
     (push (cons 'createdAgo (time-to-ago (alist-get 'creationDate pr))) result)
     (push (assoc 'title pr) result)
+    (push (cons 'url (format "https://%s.visualstudio.com/%s/_git/%s/pullrequest/%s" vsts-instance vsts-project vsts-repository pr-id)) result)
     (push (cons 'sourceBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'sourceRefName pr))) result)
     (push (cons 'destBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'targetRefName pr))) result)
     result))
@@ -82,6 +84,15 @@
 	     (createdAgo nil 15 t)
 	     (sourceBranch nil 20 t)
 	     (destBranch nil 20 t)))
+
+(let ((map vsts-pullrequests-list-mode-map))
+  (define-key map (kbd "q") 'quit-window)
+  (define-key map (kbd "C-o") 'vsts/open-item))
+
+(when (symbolp 'evil-emacs-state-modes)
+  (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-list-mode)
+  ;; (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-info-mode)
+  )
 
 ;;;###autoload
 (defun vsts/show-pullrequests ()

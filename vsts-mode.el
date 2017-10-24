@@ -121,6 +121,11 @@
 (defun vsts/display-items (items)
   (message "Items: %s" items))
 
+(defun vsts/open-item ()
+  "Opens current item's url in list"
+  (interactive)
+  (browse-url (alist-get 'url (bui-list-current-entry))))
+
 (defvar vsts-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") 'vsts/load-items)
