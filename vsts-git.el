@@ -76,7 +76,7 @@
   ;; :describe-function #'vsts/builds-list-describe
   :get-entries-function '(lambda ()
 			   (mapcar 'vsts/git-parse-pullrequest (alist-get 'value (vsts/git-get-pullrequests))))
-  :format ''((id nil 5 t)
+  :format '((id nil 5 t)
 	     (createdBy nil 15 t)
 	     (title nil 80 t)
 	     (createdAgo nil 15 t)
