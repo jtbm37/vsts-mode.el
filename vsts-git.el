@@ -66,7 +66,7 @@
     (push (assoc 'status pr) result)
     (push (cons 'createdAgo (time-to-ago (alist-get 'creationDate pr))) result)
     (push (assoc 'title pr) result)
-    (push (cons 'url (format "https://%s.visualstudio.com/%s/_git/%s/pullrequest/%s" vsts-instance vsts-project vsts-repository pr-id)) result)
+    (push (cons 'url (concat (vsts/get-web-url (format "/_git/%s/pullrequest/%s" vsts-repository pr-id)))) result)
     (push (cons 'sourceBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'sourceRefName pr))) result)
     (push (cons 'destBranch (replace-regexp-in-string "refs/heads/" "" (alist-get 'targetRefName pr))) result)
     result))
