@@ -23,11 +23,16 @@
 ;; 
 
 ;;; Code:
-
+(defconst vsts-workitems-api "_apis/wit/workitems")
 
 (defun vsts/get-work-items (ids &optional fields)
   "Returns work items for the specified ids"
-  nil)
+  (when ids
+    (let ((url (concat (vsts/get-url vsts-workitems-api)
+		       "&ids="
+		       (string-join ids ",")
+		       (when fields (concat "&fields=" (string-join fields ","))))))
+      (alist-get 'value (request-response-data (vsts--submit-request url nil "GET" nil nil))))))
 
 
 (provide 'vsts-workitems)

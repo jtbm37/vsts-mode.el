@@ -61,7 +61,6 @@
 
 
 (defconst vsts-base-uri "https://%s.visualstudio.com/DefaultCollection/")
-(defconst vsts-workitems-api "_apis/wit/WorkItems")
 (defconst vsts-builds-api "_apis/build/builds")
 (defconst vsts-build-definitions-api "_apis/build/definitions")
 

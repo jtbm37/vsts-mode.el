@@ -85,6 +85,16 @@
 	     (sourceBranch nil 20 t)
 	     (destBranch nil 20 t)))
 
+(defun vsts-pr-info-work-items-insert (entry)
+  "inserts work items section in pull request info panel"
+  (when-let ((pr-id (alist-get 'id entry))
+	     (wis (vsts/get-pullrequest-work-items pr-id)))
+    (bui-format-insert "Work Items" 'bui-info-param-title bui-info-param-title-format)
+    (bui-newline)
+    (seq-doseq (wi wis)
+      (bui-format-insert (format "#%s - %s" (alist-get 'id wi) (alist-get 'System\.Title (alist-get 'fields wi))))
+      (bui-newline))))
+
 (defun vsts-pullrequests-list-describe (&rest pr)
   "Display 'info' buffer for vsts-pullrequests list."
   (bui-get-display-entries 'vsts-pullrequests 'info (cons 'id pr)))
@@ -93,10 +103,18 @@
   :buffer-name "*Pull Request Info*"
   :get-entries-function '(lambda (&rest args)
 			   (let ((pr (cdr (vsts/git-get-pullrequests (cadr args)))))
-			     (list (list (assoc 'title pr)))))
+			     (list (vsts/git-parse-pullrequest pr))))
   :format '((title format (format))
+	    vsts-pr-info-work-items-insert
 	    nil))
 
+(defun vsts/get-pullrequest-work-items (pr-id)
+  "Returns pull request's work items for `pr-id'"
+  (when-let ((url (vsts/get-url (format "%s/%s/workitems" (format vsts-git-pullrequests-api (alist-get 'id  (vsts/git-get-repository))) pr-id)))
+	     (resp (request-response-data (vsts--submit-request url nil "GET" nil nil)))
+	     (hasData (> (alist-get 'count resp) 0))
+	     (wis-id (mapcar '(lambda (x) (alist-get 'id x)) (alist-get 'value resp))))
+    (vsts/get-work-items wis-id '("System.Title"))))
 
 (let ((map vsts-pullrequests-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
