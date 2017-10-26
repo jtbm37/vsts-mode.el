@@ -20,10 +20,28 @@
 
 ;;; Commentary:
 
+;; TODO - To get the html into the buffer, write the html to a temp file and
+;; use (shell-command "w3m -dump path/to/temp.html")
 ;; 
 
 ;;; Code:
 (defconst vsts-workitems-api "_apis/wit/workitems")
+(defvar vsts-workitem-fields '("System.Title"
+			       "System.State"
+			       "System.WorkItemType"
+			       "System.AreaPath"
+			       "System.TeamProject"
+			       "System.IterationPath"
+			       "System.AssignedTo"
+			       "System.CreatedDate"
+			       "System.CreatedBy"
+			       "System.ChangedDate"
+			       "System.ChangedBy"
+			       "Microsoft.VSTS.Common.Priority"
+			       "Microsoft.VSTS.Common.Severity"
+			       "Microsoft.VSTS.TCM.ReproSteps"
+			       "Microsoft.VSTS.TCM.SystemInfo"
+			       "Microsoft.VSTS.Common.AcceptanceCriteria"))
 
 (defun vsts/get-work-items (ids &optional fields)
   "Returns work items for the specified ids"
@@ -34,6 +52,18 @@
 		       (when fields (concat "&fields=" (string-join fields ","))))))
       (alist-get 'value (request-response-data (vsts--submit-request url nil "GET" nil nil))))))
 
+(bui-define-interface vsts-wi info
+  :buffer-name "*Work Item*"
+  :get-entries-function '(lambda (&rest args)
+			   (let ((value (vsts/get-work-items (cdr args) vsts-workitem-fields)))
+			     (list (elt value 0))))
+  :format '((id nil vsts-insert-value)
+	    nil))
+
+(defun vsts/show-workitem (id)
+  "Display the work item details"
+  (interactive)
+  (bui-get-display-entries 'vsts-wi 'info (cons 'id (list id))))
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here
