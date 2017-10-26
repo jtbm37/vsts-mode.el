@@ -64,6 +64,7 @@
     (push (cons 'id pr-id) result)
     (push (cons 'createdBy (alist-get 'displayName (alist-get 'createdBy pr))) result)
     (push (assoc 'status pr) result)
+    (push (assoc 'description pr) result)
     (push (cons 'createdAgo (time-to-ago (alist-get 'creationDate pr))) result)
     (push (assoc 'title pr) result)
     (push (cons 'url (concat (vsts/get-web-url (format "/_git/%s/pullrequest/%s" vsts-repository pr-id)))) result)
@@ -85,16 +86,6 @@
 	     (sourceBranch nil 20 t)
 	     (destBranch nil 20 t)))
 
-(defun vsts-pr-info-work-items-insert (entry)
-  "inserts work items section in pull request info panel"
-  (when-let ((pr-id (alist-get 'id entry))
-	     (wis (vsts/get-pullrequest-work-items pr-id)))
-    (bui-format-insert "Work Items" 'bui-info-param-title bui-info-param-title-format)
-    (bui-newline)
-    (seq-doseq (wi wis)
-      (bui-format-insert (format "#%s - %s" (alist-get 'id wi) (alist-get 'System\.Title (alist-get 'fields wi))))
-      (bui-newline))))
-
 (defun vsts-pullrequests-list-describe (&rest pr)
   "Display 'info' buffer for vsts-pullrequests list."
   (bui-get-display-entries 'vsts-pullrequests 'info (cons 'id pr)))
@@ -104,9 +95,32 @@
   :get-entries-function '(lambda (&rest args)
 			   (let ((pr (cdr (vsts/git-get-pullrequests (cadr args)))))
 			     (list (vsts/git-parse-pullrequest pr))))
-  :format '((title format (format))
+  :format '((title nil vsts-insert-value)
+	    (description vsts-insert-title vsts-insert-value)
 	    vsts-pr-info-work-items-insert
 	    nil))
+
+(defun vsts-insert-title (args)
+  "Inserts title"
+  (bui-format-insert args 'bui-info-param-title nil)
+  (bui-newline))
+
+(defun vsts-insert-value (value args)
+  "Inserts value. `value' is just the corresponding while
+`args' is the full alist entry"
+  ;; (bui-format-insert value)
+  (bui-split-insert value nil 70)
+  (bui-newline))
+
+(defun vsts-pr-info-work-items-insert (entry)
+  "inserts work items section in pull request info panel"
+  (when-let ((pr-id (alist-get 'id entry))
+	     (wis (vsts/get-pullrequest-work-items pr-id)))
+    (bui-format-insert "Work Items" 'bui-info-param-title bui-info-param-title-format)
+    (bui-newline)
+    (seq-doseq (wi wis)
+      (bui-format-insert (format "#%s - %s" (alist-get 'id wi) (alist-get 'System\.Title (alist-get 'fields wi))))
+      (bui-newline))))
 
 (defun vsts/get-pullrequest-work-items (pr-id)
   "Returns pull request's work items for `pr-id'"
