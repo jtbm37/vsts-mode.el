@@ -57,8 +57,19 @@
   :get-entries-function '(lambda (&rest args)
 			   (let ((value (vsts/get-work-items (cdr args) vsts-workitem-fields)))
 			     (list (elt value 0))))
-  :format '((id nil vsts-insert-value)
+  :format '(vsts-wi-info-title-insert
 	    nil))
+
+(defun vsts-wi-info-title-insert (entry)
+  "Inserts the work item title into info buffer"
+  (when-let ((id (alist-get 'id entry))
+	     (fields (alist-get 'fields entry))
+	     (title (alist-get 'System\.Title fields))
+	     (user (alist-get 'System\.AssignedTo fields)))
+    (bui-format-insert (format "%s - %s" id title))
+    (bui-newline)
+    (bui-format-insert (replace-regexp-in-string " <.*?>" "" user))
+    (bui-newline)))
 
 (defun vsts/show-workitem (id)
   "Display the work item details"
