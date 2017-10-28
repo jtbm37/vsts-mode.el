@@ -63,7 +63,7 @@ When `relation-p' is non-nil, it will include the work item relations."
 	    (Microsoft\.VSTS\.Common\.Priority . "Priority")
 	    (Microsoft\.VSTS\.Common\.AcceptanceCriteria . "Acceptance Criteria"))
   :get-entries-function '(lambda (&rest args)
-			   (list (vsts/get-work-item-info (alist-get 'id args))))
+			   (list args))
   :format '(vsts-wi-info-title-insert
 	    (System.State format (format))
 	    (Microsoft\.VSTS\.Common\.Priority format (format))
@@ -74,12 +74,14 @@ When `relation-p' is non-nil, it will include the work item relations."
 
 (defun vsts/get-work-item-info (id)
   "Returns work details necessary for the info panel"
-  (when-let ((resp (vsts/get-work-items id nil t))
+  (when (wholenump id)
+    (setq id (number-to-string id)))
+  (when-let ((resp (vsts/get-work-items (list id) nil t))
 	     (value (elt resp 0))
 	     (fields (alist-get 'fields value))
-	     (id (assoc 'id value))
+	     (wi-id (assoc 'id value))
 	     (relations (assoc 'relations value)))
-    (push id fields)
+    (push wi-id fields)
     (push relations fields)
     fields))
 
@@ -87,7 +89,7 @@ When `relation-p' is non-nil, it will include the work item relations."
   "Inserts the work item title into info buffer"
   (when-let ((id (alist-get 'id entry))
 	     (title (alist-get 'System\.Title entry))
-	     (user (alist-get 'System\.AssignedTo entry)))
+	     (user (or (alist-get 'System\.AssignedTo entry) "N/A")))
     (bui-format-insert (format "%s - %s" id title) 'font-lock-builtin-face)
     (bui-newline)
     (bui-format-insert "Assigned To" 'bui-info-param-title bui-info-param-title-format)
@@ -107,8 +109,9 @@ When `relation-p' is non-nil, it will include the work item relations."
   "Returns a list of the related work items
 in work item `wi'"
   (when-let ((relations (alist-get 'relations wi))
-	     (rel-wis (remove-if-not '(lambda (x) (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Forward"))
-				     (alist-get 'relations vsts-temp-wi)))
+	     (rel-wis (remove-if-not '(lambda (x) (or (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Forward")
+						 (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Reverse")))
+				     relations))
 	     (ids (mapcar 'vsts/get-relation-work-item-id rel-wis))
 	     (wis (vsts/get-work-items ids '("System.Title" "System.State"))))
     (mapcar '(lambda (x)
@@ -124,9 +127,21 @@ in work item `wi'"
 
 (defun vsts/show-workitem (id)
   "Display the work item details"
+  (interactive "nId:")
+  (let ((wi (vsts/get-work-item-info id)))
+    (push (cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))) wi)
+    (bui-get-display-entries 'vsts-wi 'info wi)))
+
+(defun vsts/open-related-wi ()
+  "Prompts related work items and then opens it."
   (interactive)
-  (bui-get-display-entries 'vsts-wi 'info (list (cons 'id (list id))
-						(cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))))))
+  (when-let ((current-wi (bui-current-args))
+	     (related (vsts/get-related-work-items current-wi)))
+    (if (= (length related) 1)
+	(vsts/show-workitem (number-to-string (alist-get 'id (car related))))
+      (ivy-read "select work item:"
+		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (alist-get 'System.Title x)) 'property (alist-get 'id x))) related)
+		:action '(lambda (x) (vsts/show-workitem (number-to-string (get-text-property 0 'property x))))))))
 
 (when (symbolp 'evil-emacs-state-modes)
   ;; (add-to-list 'evil-emacs-state-modes 'vsts-wi-list-mode)
@@ -134,7 +149,8 @@ in work item `wi'"
 
 (let ((map vsts-wi-info-mode-map))
   (define-key map (kbd "q") 'quit-window)
-  (define-key map (kbd "C-o") 'vsts/open-item))
+  (define-key map (kbd "C-o") 'vsts/open-item)
+  (define-key map (kbd "gr") 'vsts/open-related-wi))
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here
