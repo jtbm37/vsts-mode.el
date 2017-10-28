@@ -106,10 +106,17 @@
   (bui-newline))
 
 (defun vsts-insert-value (value args)
-  "Inserts value. `value' is just the corresponding while
-`args' is the full alist entry"
-  ;; (bui-format-insert value)
+  "Inserts value. `args' is the full alist entry"
   (bui-split-insert value nil 70)
+  (bui-newline))
+
+(defun vsts-insert-html (html args)
+  "Converts `html' as text and inserts value.
+`args' is the full alist entry"
+  (with-temp-file "/tmp/emacs-vsts-temp.html"
+    (erase-buffer)
+    (insert html))
+  (call-process  "/usr/local/bin/w3m" nil t t "/tmp/emacs-vsts-temp.html")
   (bui-newline))
 
 (defun vsts-pr-info-work-items-insert (entry)

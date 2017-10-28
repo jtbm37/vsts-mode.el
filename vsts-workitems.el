@@ -20,8 +20,6 @@
 
 ;;; Commentary:
 
-;; TODO - To get the html into the buffer, write the html to a temp file and
-;; use (shell-command "w3m -dump path/to/temp.html")
 ;; 
 
 ;;; Code:
@@ -37,6 +35,7 @@
 			       "System.CreatedBy"
 			       "System.ChangedDate"
 			       "System.ChangedBy"
+			       "System.Description"
 			       "Microsoft.VSTS.Common.Priority"
 			       "Microsoft.VSTS.Common.Severity"
 			       "Microsoft.VSTS.TCM.ReproSteps"
@@ -54,27 +53,46 @@
 
 (bui-define-interface vsts-wi info
   :buffer-name "*Work Item*"
+  :titles '((System\.State . "State")
+	    (System\.Description . "Description")
+	    (Microsoft\.VSTS\.Common\.Priority . "Priority")
+	    (Microsoft\.VSTS\.Common\.AcceptanceCriteria . "Acceptance Criteria"))
   :get-entries-function '(lambda (&rest args)
-			   (let ((value (vsts/get-work-items (cdr args) vsts-workitem-fields)))
-			     (list (elt value 0))))
+			   (let* ((resp (vsts/get-work-items (alist-get 'id args) vsts-workitem-fields))
+				  (value (elt resp 0))
+				  (fields (alist-get 'fields value)))
+			     (list (push (assoc 'id value) fields))))
   :format '(vsts-wi-info-title-insert
-	    nil))
+	    (System.State format (format))
+	    (Microsoft\.VSTS\.Common\.Priority format (format))
+	    nil
+	    (System.Description vsts-insert-title vsts-insert-html)
+	    (Microsoft.VSTS.Common.AcceptanceCriteria vsts-insert-title vsts-insert-html)))
 
 (defun vsts-wi-info-title-insert (entry)
   "Inserts the work item title into info buffer"
   (when-let ((id (alist-get 'id entry))
-	     (fields (alist-get 'fields entry))
-	     (title (alist-get 'System\.Title fields))
-	     (user (alist-get 'System\.AssignedTo fields)))
-    (bui-format-insert (format "%s - %s" id title))
+	     (title (alist-get 'System\.Title entry))
+	     (user (alist-get 'System\.AssignedTo entry)))
+    (bui-format-insert (format "%s - %s" id title) 'font-lock-builtin-face)
     (bui-newline)
-    (bui-format-insert (replace-regexp-in-string " <.*?>" "" user))
+    (bui-format-insert "Assigned To" 'bui-info-param-title bui-info-param-title-format)
+    (bui-format-insert (replace-regexp-in-string " <.*?>" "" user) )
     (bui-newline)))
 
 (defun vsts/show-workitem (id)
   "Display the work item details"
   (interactive)
-  (bui-get-display-entries 'vsts-wi 'info (cons 'id (list id))))
+  (bui-get-display-entries 'vsts-wi 'info (list (cons 'id (list id))
+						(cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))))))
+
+(when (symbolp 'evil-emacs-state-modes)
+  ;; (add-to-list 'evil-emacs-state-modes 'vsts-wi-list-mode)
+  (add-to-list 'evil-emacs-state-modes 'vsts-wi-info-mode))
+
+(let ((map vsts-wi-info-mode-map))
+  (define-key map (kbd "q") 'quit-window)
+  (define-key map (kbd "C-o") 'vsts/open-item))
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here
