@@ -126,7 +126,13 @@
 (defun vsts/open-item ()
   "Opens current item's url in list"
   (interactive)
-  (browse-url (alist-get 'url (bui-list-current-entry))))
+  (when-let ((bui-buffer-type (bui-current-buffer-type))
+	     (url (cond ((equal bui-buffer-type 'list)
+			 (alist-get 'url (bui-list-current-entry)))
+			((equal bui-buffer-type 'info)
+			 (alist-get 'url (bui-current-args)))
+			(t nil))))
+    (browse-url url)))
 
 (defvar vsts-mode-map
   (let ((map (make-sparse-keymap)))
