@@ -88,13 +88,12 @@
 
 (defun vsts-pullrequests-list-describe (&rest pr)
   "Display 'info' buffer for vsts-pullrequests list."
-  (bui-get-display-entries 'vsts-pullrequests 'info (cons 'id pr)))
+  (vsts/show-pullrequest (car pr)))
 
 (bui-define-interface vsts-pullrequests info
   :buffer-name "*Pull Request Info*"
   :get-entries-function '(lambda (&rest args)
-			   (let ((pr (cdr (vsts/git-get-pullrequests (cadr args)))))
-			     (list (vsts/git-parse-pullrequest pr))))
+			   (list args))
   :format '((title nil vsts-insert-value)
 	    (description vsts-insert-title vsts-insert-value)
 	    vsts-pr-info-work-items-insert
@@ -121,8 +120,7 @@
 
 (defun vsts-pr-info-work-items-insert (entry)
   "inserts work items section in pull request info panel"
-  (when-let ((pr-id (alist-get 'id entry))
-	     (wis (vsts/get-pullrequest-work-items pr-id)))
+  (when-let ((wis (alist-get 'relations entry)))
     (bui-format-insert "Work Items" 'bui-info-param-title bui-info-param-title-format)
     (bui-newline)
     (seq-doseq (wi wis)
@@ -141,9 +139,25 @@
   (define-key map (kbd "q") 'quit-window)
   (define-key map (kbd "C-o") 'vsts/open-item))
 
+(let ((map vsts-pullrequests-info-mode-map))
+  (define-key map (kbd "q") 'quit-window)
+  (define-key map (kbd "C-o") 'vsts/open-item)
+  (define-key map (kbd "gr") 'vsts/open-related-wi))
+
 (when (symbolp 'evil-emacs-state-modes)
   (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-list-mode)
   (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-info-mode))
+
+;;;###autoload
+(defun vsts/show-pullrequest (id)
+  "Shows pull request's details for `id'"
+  (interactive "nId: ")
+  (let* ((pr-raw (vsts/git-get-pullrequests id))
+	 (pr (vsts/git-parse-pullrequest (cdr pr-raw)))
+	 (wis (vsts/get-pullrequest-work-items id)))
+    (when (and wis (> (length wis) 0))
+      (push (cons 'relations wis) pr))
+    (bui-get-display-entries 'vsts-pullrequests 'info pr)))
 
 ;;;###autoload
 (defun vsts/show-pullrequests ()

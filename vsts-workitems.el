@@ -98,7 +98,7 @@ When `relation-p' is non-nil, it will include the work item relations."
 
 (defun vsts-wi-info-relations-insert (entry)
   "Inserts the related items into info buffer"
-  (when-let ((wis (vsts/get-related-work-items entry)))
+  (when-let ((wis (alist-get 'relations entry)))
     (bui-format-insert "Related Work Items" 'bui-info-param-title nil)
     (bui-newline)
     (seq-doseq (rel wis)
@@ -125,20 +125,25 @@ in work item `wi'"
     (when (string-to-number id)
       id)))
 
+;;;###autoload
 (defun vsts/show-workitem (id)
   "Display the work item details"
   (interactive "nId:")
-  (let ((wi (vsts/get-work-item-info id)))
+  (let* ((wi (vsts/get-work-item-info id))
+	(related (vsts/get-related-work-items wi)))
     (push (cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))) wi)
+    (when (and related (> (length related) 0))
+      (assq-delete-all 'relations wi)
+      (push (cons 'relations related) wi))
     (bui-get-display-entries 'vsts-wi 'info wi)))
 
 (defun vsts/open-related-wi ()
   "Prompts related work items and then opens it."
   (interactive)
   (when-let ((current-wi (bui-current-args))
-	     (related (vsts/get-related-work-items current-wi)))
+	     (related (alist-get 'relations current-wi)))
     (if (= (length related) 1)
-	(vsts/show-workitem (number-to-string (alist-get 'id (car related))))
+	(vsts/show-workitem (number-to-string (alist-get 'id (elt related 0))))
       (ivy-read "select work item:"
 		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (alist-get 'System.Title x)) 'property (alist-get 'id x))) related)
 		:action '(lambda (x) (vsts/show-workitem (number-to-string (get-text-property 0 'property x))))))))
