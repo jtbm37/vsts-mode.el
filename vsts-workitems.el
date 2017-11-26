@@ -56,54 +56,6 @@ When `relation-p' is non-nil, it will include the work item relations."
 		       (when relation-p "&$expand=relations"))))
       (alist-get 'value (request-response-data (vsts--submit-request url nil "GET" nil nil))))))
 
-(bui-define-interface vsts-wi info
-  :buffer-name "*Work Item*"
-  :titles '((System\.State . "State")
-	    (System\.Description . "Description")
-	    (Microsoft\.VSTS\.Common\.Priority . "Priority")
-	    (Microsoft\.VSTS\.Common\.AcceptanceCriteria . "Acceptance Criteria"))
-  :get-entries-function '(lambda (&rest args)
-			   (list args))
-  :format '(vsts-wi-info-title-insert
-	    (System.State format (format))
-	    (Microsoft\.VSTS\.Common\.Priority format (format))
-	    nil
-	    (System.Description vsts-insert-title vsts-insert-html)
-	    (Microsoft.VSTS.Common.AcceptanceCriteria vsts-insert-title vsts-insert-html)
-	    vsts-wi-info-relations-insert))
-
-(defun vsts/get-work-item-info (id)
-  "Returns work details necessary for the info panel"
-  (when (wholenump id)
-    (setq id (number-to-string id)))
-  (when-let ((resp (vsts/get-work-items (list id) nil t))
-	     (value (elt resp 0))
-	     (fields (alist-get 'fields value))
-	     (wi-id (assoc 'id value))
-	     (relations (assoc 'relations value)))
-    (push wi-id fields)
-    (push relations fields)
-    fields))
-
-(defun vsts-wi-info-title-insert (entry)
-  "Inserts the work item title into info buffer"
-  (when-let ((id (alist-get 'id entry))
-	     (title (alist-get 'System\.Title entry))
-	     (user (or (alist-get 'System\.AssignedTo entry) "N/A")))
-    (bui-format-insert (format "%s - %s" id title) 'font-lock-builtin-face)
-    (bui-newline)
-    (bui-format-insert "Assigned To" 'bui-info-param-title bui-info-param-title-format)
-    (bui-format-insert (replace-regexp-in-string " <.*?>" "" user) )
-    (bui-newline)))
-
-(defun vsts-wi-info-relations-insert (entry)
-  "Inserts the related items into info buffer"
-  (when-let ((wis (alist-get 'relations entry)))
-    (bui-format-insert "Related Work Items" 'bui-info-param-title nil)
-    (bui-newline)
-    (seq-doseq (rel wis)
-      (bui-format-insert (format "%s - %s (%s)" (alist-get 'id rel) (alist-get 'System\.Title rel) (alist-get 'System\.State rel)))
-      (bui-newline))))
 
 (defun vsts/get-related-work-items (wi)
   "Returns a list of the related work items
@@ -125,37 +77,23 @@ in work item `wi'"
     (when (string-to-number id)
       id)))
 
-;;;###autoload
-(defun vsts/show-workitem (id)
-  "Display the work item details"
-  (interactive "nId:")
-  (let* ((wi (vsts/get-work-item-info id))
-	(related (vsts/get-related-work-items wi)))
-    (push (cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))) wi)
-    (when (and related (> (length related) 0))
-      (assq-delete-all 'relations wi)
-      (push (cons 'relations related) wi))
-    (bui-get-display-entries 'vsts-wi 'info wi)))
+(defun vsts/create-work-item (type title &optional args parent)
+  "Creates work item where `args' is an alist
+of the http request params"
+  (let ((base-url (vsts/get-url (concat vsts-workitems-api "/$" type) t "1.0"))
+	(params `(((op . "add")
+		   (path . "/fields/System.Title")
+		   (value . ,title)))))
+    (when parent
+      (push `((op . "add")
+	      (path . "/relations/-")
+	      (value . ((rel . "System.LinkTypes.Hierarchy-Reverse")
+			(url . ,(vsts/get-url (concat vsts-workitems-api "/" parent))))))
+	    params))
+    (alist-get 'value (request-response-data (vsts--submit-request base-url nil "PATCH" params nil)))))
 
-(defun vsts/open-related-wi ()
-  "Prompts related work items and then opens it."
-  (interactive)
-  (when-let ((current-wi (bui-current-args))
-	     (related (alist-get 'relations current-wi)))
-    (if (= (length related) 1)
-	(vsts/show-workitem (number-to-string (alist-get 'id (elt related 0))))
-      (ivy-read "select work item:"
-		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (alist-get 'System.Title x)) 'property (alist-get 'id x))) related)
-		:action '(lambda (x) (vsts/show-workitem (number-to-string (get-text-property 0 'property x))))))))
-
-(when (symbolp 'evil-emacs-state-modes)
-  ;; (add-to-list 'evil-emacs-state-modes 'vsts-wi-list-mode)
-  (add-to-list 'evil-emacs-state-modes 'vsts-wi-info-mode))
-
-(let ((map vsts-wi-info-mode-map))
-  (define-key map (kbd "q") 'quit-window)
-  (define-key map (kbd "C-o") 'vsts/open-item)
-  (define-key map (kbd "gr") 'vsts/open-related-wi))
+(defun vsts/create-wi-task (title &optional args parent)
+  (vsts/create-work-item "Task" title args parent))
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here

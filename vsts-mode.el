@@ -94,11 +94,14 @@
   (if (require 'request nil 'noerror)
       (lexical-let* ((c callback)
 		     (type (or type "POST"))
-		     (token (concat  "Basic " (base64-encode-string (concat ":" vsts-token)))))
+		     (token (concat  "Basic " (base64-encode-string (concat ":" vsts-token))))
+		     (c-type (if (string-equal type "PATCH")
+				 "application/json-patch+json"
+			       "application/json")))
         (request url
                  :type type
 		 :headers `(("Authorization" . ,token)
-			    ("Content-Type" . "application/json"))
+			    ("Content-Type" . ,c-type))
                  :parser 'json-read
                  :sync (not async)
                  :data (json-encode params)
