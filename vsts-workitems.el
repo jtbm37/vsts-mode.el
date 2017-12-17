@@ -23,7 +23,12 @@
 ;; 
 
 ;;; Code:
+(require 'vsts-mode)
+
 (defconst vsts-workitems-api "_apis/wit/workitems")
+(defconst vsts-queries-api "_apis/wit/queries")
+(defconst vsts-query-workitems-api "_apis/wit/wiql/%s")
+
 (defvar vsts-workitem-fields '("System.Title"
 			       "System.State"
 			       "System.WorkItemType"
@@ -65,7 +70,7 @@ in work item `wi'"
 						 (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Reverse")))
 				     relations))
 	     (ids (mapcar 'vsts/get-relation-work-item-id rel-wis))
-	     (wis (vsts/get-work-items ids '("System.Title" "System.State"))))
+	     (wis (vsts/get-work-items ids '("System.Title" "System.State" "System\.AssignedTo"))))
     (mapcar '(lambda (x)
 	       (push (assoc 'id x) (alist-get 'fields x)))
 	    wis)))

@@ -26,6 +26,7 @@
 
 ;;; Code:
 
+(require 'request)
 (require 'bui)
 (require 'vsts-builds)
 (require 'dash)
