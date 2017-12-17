@@ -103,8 +103,10 @@
 
 (defun vsts/get-work-item-for-display (id)
   (let* ((wi (vsts/get-work-item-info id))
-	 (related (vsts/get-related-work-items wi)))
+	 (related (vsts/get-related-work-items wi))
+	 (comments (assoc 'comments (vsts/get-workitem-comments id))))
     (push (cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))) wi)
+    (push comments wi)
     (when (and related (> (length related) 0))
       (assq-delete-all 'relations wi)
       (push (cons 'relations related) wi))

@@ -28,6 +28,7 @@
 (defconst vsts-workitems-api "_apis/wit/workitems")
 (defconst vsts-queries-api "_apis/wit/queries")
 (defconst vsts-query-workitems-api "_apis/wit/wiql/%s")
+(defconst vsts-workitem-comments-api "_apis/wit/workitems/%s/comments")
 
 (defvar vsts-workitem-fields '("System.Title"
 			       "System.State"
@@ -81,6 +82,11 @@ in work item `wi'"
 	 (id (-last-item (s-split "/" url))))
     (when (string-to-number id)
       id)))
+
+(defun vsts/get-workitem-comments (id)
+  "Returns work item comments for `id'"
+  (let* ((url (concat (format (vsts/get-url vsts-workitem-comments-api nil "3.0-preview") id) "&fromRevision=1")))
+    (request-response-data (vsts--submit-request url nil "GET" nil nil))))
 
 (defun vsts/create-work-item (type title &optional args parent)
   "Creates work item where `args' is an alist
