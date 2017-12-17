@@ -120,6 +120,7 @@ with all `wi' details"
 						      (org-entry-put (point) "assigned" (replace-regexp-in-string " <.*?>" "" assigned)))))
 						(end-of-buffer)
 						(org-return)
+						(org-return)
 						(insert "** Comments")
 						(org-return)
 						(when-let ((comments (alist-get 'comments wi)))
