@@ -151,7 +151,7 @@
     ;; as `wis'. So we have to iterate through wis and get the item from `wis-full'
     (let ((wis-full (vsts/get-work-items wis '("System\.Id" "System\.Title" "System\.State" "Microsoft\.VSTS\.Common\.Priority" "System\.ChangedDate" "System\.IterationPath" "System\.AreaPath"))))
       (mapcar (lambda (x)
-		(alist-get 'fields (seq-find (lambda (w) (eq (string-to-number x) (alist-get 'id w))) wis-full)))
+		(cons `(id . ,x) (alist-get 'fields (seq-find (lambda (w) (eq (string-to-number x) (alist-get 'id w))) wis-full))))
 	      wis))))
 
 
