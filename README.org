@@ -5,7 +5,7 @@ At the moment this is rather a collection of functions rather than a major-mode.
 
 You have to add your credentials in your .authinfo.gpg file as such:
 
-machine vsts login *vsts instance* password *password* project *project name* repo *repo name*
+machine vsts login *vsts-instance* password *password* project *project-name* repo *repo-name*
 
 Main functions are
 - vsts/show-query
