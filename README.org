@@ -1,4 +1,4 @@
-# [wip] vsts-mode
+* [wip] vsts-mode
 Emacs mode for Visual Studio Team Services
 
 At the moment this is rather a collection of functions rather than a major-mode.
