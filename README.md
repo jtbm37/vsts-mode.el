@@ -1,2 +1,14 @@
-# vsts-mode
+# [wip] vsts-mode
 Emacs mode for Visual Studio Team Services
+
+At the moment this is rather a collection of functions rather than a major-mode.
+
+You have to add your credentials in your .authinfo.gpg file as such:
+machine vsts login {vsts domain name} password {password} project {project name} repo {repo name}
+
+Main functions are
+- vsts/show-query
+
+- vsts/show-builds
+
+- vsts/show-pullrequests
