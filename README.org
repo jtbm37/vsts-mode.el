@@ -13,3 +13,5 @@ Main functions are
 - vsts/show-builds
 
 - vsts/show-pullrequests
+
+- vsts/show-workitem
