@@ -95,6 +95,8 @@ of the http request params"
 	(params `(((op . "add")
 		   (path . "/fields/System.Title")
 		   (value . ,title)))))
+    (when args
+      (push args params))
     (when parent
       (push `((op . "add")
 	      (path . "/relations/-")
