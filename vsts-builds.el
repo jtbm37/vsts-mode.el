@@ -42,9 +42,7 @@
   "Displays all builds"
   (let ((base-url (vsts/get-url vsts-builds-api t))
 	(params (format "&$top=%s" vsts-builds-list-top)))
-    (vsts--submit-request (concat base-url params) '(lambda (data)
-						      (setq vsts-builds (vsts/parse-builds data))) "GET" nil nil)
-    vsts-builds))
+    (vsts/parse-builds (request-response-data (vsts--submit-request (concat base-url params) nil "GET" nil nil)))))
 
 (defun vsts/parse-build-item (data)
   "Returns alist of some of the build fields"
@@ -52,6 +50,7 @@
 	(finish-at (alist-get 'finishTime data))
 	(data-result (alist-get 'result data))
 	(id (assoc 'id data))
+	(source-version (alist-get 'sourceVersion data))
 	build)
     (if (string= data-result "canceled")
 	(push (cons 'status "canceled") build)
@@ -63,7 +62,7 @@
     (setq branch (replace-regexp-in-string "refs/pull/\\([0-9]*?\\)/merge" "PR\\1" branch nil nil 0))
     (setq branch (replace-regexp-in-string "refs/heads/" "" branch))
     (push (cons 'sourceBranch branch) build)
-    (push (cons 'sourceVersion (substring (alist-get 'sourceVersion data) 0 8)) build)
+    (push (cons 'sourceVersion (when source-version (substring (alist-get 'sourceVersion data) 0 8))) build)
     (push (assoc 'name (assoc 'definition data)) build)
     (push (cons 'requestedBy (alist-get 'displayName (alist-get 'requestedBy data))) build)
     (push (cons 'completed (time-to-ago finish-at)) build)
