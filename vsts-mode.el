@@ -60,6 +60,12 @@
   :type 'string
   :group 'vsts)
 
+(defcustom vsts-project-path nil
+  "Local path to repository. This is used to get the PR changes instead
+of fetching from the API (temporary solution)."
+  :type 'string
+  :group 'vsts)
+
 
 (defconst vsts-base-uri "https://%s.visualstudio.com/DefaultCollection/")
 (defconst vsts-builds-api "_apis/build/builds")

@@ -37,6 +37,7 @@
     (define-key org-vsts-map (kbd "C-c vr") 'org-vsts-visit-related)
     (define-key org-vsts-map (kbd "C-c vb") 'org-vsts-browse)
     (define-key org-vsts-map (kbd "C-c vB") 'org-vsts-browse-related)
+    (define-key org-vsts-map (kbd "C-c vc") 'org-vsts-show-pr-changes)
     org-vsts-map))
 
 ;;;###autoload
@@ -76,6 +77,16 @@ Nil argument turns mode off.
       (ivy-read "select work item:"
 		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (or (alist-get 'System.Title x) (alist-get 'System.Title (alist-get 'fields x)))) 'property (alist-get 'id x))) related)
 		:action '(lambda (x) (vsts/show-workitem (number-to-string (get-text-property 0 'property x))))))))
+
+(defun org-vsts-show-pr-changes ()
+  (interactive)
+  (when-let ((source (alist-get 'sourceBranch vsts/current-wi))
+	     (dest (alist-get 'destBranch vsts/current-wi)))
+    (let ((default-directory vsts-project-path)
+	  (branch (format "origin/%s" source)))
+      (if (string= (magit-get-current-branch) dest)
+	  (magit-merge-preview branch)
+	(user-error (format "Current branch is not %s" dest))))))
 
 (defun vsts/create-wi-org-buffer (wi)
   "Creates a temp org-mode buffer
