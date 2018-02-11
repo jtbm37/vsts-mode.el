@@ -24,6 +24,7 @@
 
 ;;; Code:
 
+(require 'vsts-workitems)
 (defconst vsts-git-branch-api "_apis/git/repositories/%s/refs/heads")
 (defconst vsts-git-pullrequests-api "_apis/git/repositories/%s/pullrequests")
 (defconst vsts-git-repository-api "_apis/git/repositories/")
@@ -115,7 +116,7 @@
   (with-temp-file "/tmp/emacs-vsts-temp.html"
     (erase-buffer)
     (insert html))
-  (call-process  "/usr/local/bin/w3m" nil t t "/tmp/emacs-vsts-temp.html")
+  (call-process  "w3m" nil t t "/tmp/emacs-vsts-temp.html")
   (bui-newline))
 
 (defun vsts-pr-info-work-items-insert (entry)
@@ -133,7 +134,7 @@
 	     (resp (request-response-data (vsts--submit-request url nil "GET" nil nil)))
 	     (hasData (> (alist-get 'count resp) 0))
 	     (wis-id (mapcar '(lambda (x) (alist-get 'id x)) (alist-get 'value resp))))
-    (vsts/get-work-items wis-id '("System.Title"))))
+    (vsts/get-work-items wis-id '("System.Title" "System.State" "System.AssignedTo"))))
 
 (let ((map vsts-pullrequests-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
@@ -148,16 +149,26 @@
   (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-list-mode)
   (add-to-list 'evil-emacs-state-modes 'vsts-pullrequests-info-mode))
 
+(defun vsts/get-pullrequest-comments (id)
+  "Returns pull request comments"
+  (when-let ((url (vsts/get-url (format "%s/%s/threads" (format vsts-git-pullrequests-api (alist-get 'id (vsts/git-get-repository))) id) t "3.0-preview"))
+	     (resp (request-response-data (vsts--submit-request url nil "GET" nil nil)))
+	     (hasData (> (alist-get 'count resp) 0)))
+    (alist-get 'value resp)))
+
 ;;;###autoload
 (defun vsts/show-pullrequest (id)
   "Shows pull request's details for `id'"
   (interactive "nId: ")
   (let* ((pr-raw (vsts/git-get-pullrequests id))
 	 (pr (vsts/git-parse-pullrequest (cdr pr-raw)))
-	 (wis (vsts/get-pullrequest-work-items id)))
+	 (wis (vsts/get-pullrequest-work-items id))
+	 (comments (vsts/get-pullrequest-comments id)))
     (when (and wis (> (length wis) 0))
       (push (cons 'relations wis) pr))
-    (bui-get-display-entries 'vsts-pullrequests 'info pr)))
+    (when comments
+      (push (cons 'comments comments) pr))
+    (vsts/create-pr-org-buffer pr)))
 
 ;;;###autoload
 (defun vsts/show-pullrequests ()

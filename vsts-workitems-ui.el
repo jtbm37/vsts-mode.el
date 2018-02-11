@@ -99,7 +99,7 @@
   "Display the work item details"
   (interactive "sId:")
   (let ((wi (vsts/get-work-item-for-display id)))
-    (vsts/create-org-buffer wi)))
+    (vsts/create-wi-org-buffer wi)))
 
 (defun vsts/get-work-item-for-display (id)
   (let* ((wi (vsts/get-work-item-info id))
