@@ -65,7 +65,7 @@ Nil argument turns mode off.
     (if (= (length related) 1)
 	(browse-url (vsts/get-web-url (format "/_workitems/edit/%s" (number-to-string (alist-get 'id (elt related 0))))))
       (ivy-read "select work item:"
-		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (alist-get 'System.Title x)) 'property (alist-get 'id x))) related)
+		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (or (alist-get 'System.Title x) (alist-get 'System.Title (alist-get 'fields x)))) 'property (alist-get 'id x))) related)
 		:action '(lambda (x) (browse-url (vsts/get-web-url (format "/_workitems/edit/%s" (number-to-string (get-text-property 0 'property x))))))))))
 
 (defun org-vsts-visit-related ()
@@ -74,7 +74,7 @@ Nil argument turns mode off.
     (if (= (length related) 1)
 	(vsts/show-workitem (number-to-string (alist-get 'id (elt related 0))))
       (ivy-read "select work item:"
-		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (alist-get 'System.Title x)) 'property (alist-get 'id x))) related)
+		(mapcar '(lambda (x) (propertize (format "%s - %s" (alist-get 'id x) (or (alist-get 'System.Title x) (alist-get 'System.Title (alist-get 'fields x)))) 'property (alist-get 'id x))) related)
 		:action '(lambda (x) (vsts/show-workitem (number-to-string (get-text-property 0 'property x))))))))
 
 (defun vsts/create-wi-org-buffer (wi)
