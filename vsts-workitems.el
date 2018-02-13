@@ -23,7 +23,6 @@
 ;; 
 
 ;;; Code:
-(require 'vsts-mode)
 
 (defconst vsts-workitems-api "_apis/wit/workitems")
 (defconst vsts-queries-api "_apis/wit/queries")
