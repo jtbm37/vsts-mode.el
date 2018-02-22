@@ -28,6 +28,7 @@
 (defconst vsts-queries-api "_apis/wit/queries")
 (defconst vsts-query-workitems-api "_apis/wit/wiql/%s")
 (defconst vsts-workitem-comments-api "_apis/wit/workitems/%s/comments")
+(defconst vsts-workitem-types-api "_apis/wit/workitemTypes/")
 
 (defvar vsts-workitem-fields '("System.Title"
 			       "System.State"
@@ -106,6 +107,36 @@ of the http request params"
 
 (defun vsts/create-wi-task (title &optional args parent)
   (vsts/create-work-item "Task" title args parent))
+
+(defun vsts/get-work-item-states (type current-state)
+  "Returns all possibles states of work item `type'
+with `state'"
+  (message "getting item state %s %s" type current-state)
+  (when-let* ((url (vsts/get-url (concat vsts-workitem-types-api (s-replace " " "%20" type)) t "1.0"))
+	      (wi-type (request-response-data (vsts--submit-request url nil "GET")))
+	      (wi-trans (alist-get 'transitions wi-type))
+	      (possible-trans (alist-get (intern current-state) wi-trans)))
+    (sort (mapcar 'cdar possible-trans) 'string<)))
+
+(defun vsts/update-work-item-state (id)
+  (interactive "nId:")
+  (when-let* ((url (concat (vsts/get-url (format "%s/%s" vsts-workitems-api id) nil "1.0")))
+	 (wi (elt (vsts/get-work-items (list id)) 0))
+	 (rev (alist-get 'rev wi))
+	 (fields (alist-get 'fields wi))
+	 (type (alist-get 'System.WorkItemType fields))
+	 (old-state (alist-get 'System.State fields))
+	 (possible-states (vsts/get-work-item-states type old-state))
+	 (new-state (ivy-read "Select state: " possible-states))
+	 (data `(((op . "test")
+		  (path . "/rev")
+		  (value . ,rev))
+		 ((op . "add")
+		  (path . "/fields/System.State")
+		  (value . ,new-state)))))
+    (when (and new-state (not (string= old-state new-state)))
+      (vsts--submit-request url nil "PATCH" data nil))))
+
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here
