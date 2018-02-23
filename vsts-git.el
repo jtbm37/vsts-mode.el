@@ -25,6 +25,8 @@
 ;;; Code:
 
 (require 'vsts-workitems)
+(require 'vsts-org)
+
 (defconst vsts-git-branch-api "_apis/git/repositories/%s/refs/heads")
 (defconst vsts-git-pullrequests-api "_apis/git/repositories/%s/pullrequests")
 (defconst vsts-git-repository-api "_apis/git/repositories/")
@@ -169,13 +171,6 @@
     (when comments
       (push (cons 'comments comments) pr))
     (vsts/create-pr-org-buffer pr)))
-
-;;;###autoload
-(defun vsts/show-pullrequests ()
-  "Shows list of pull requests in `vsts-repository'"
-  (interactive)
-  (vsts/set-credentials)
-  (bui-get-display-entries 'vsts-pullrequests 'list))
 
 (provide 'vsts-git)
 ;;; vsts-git.el ends here

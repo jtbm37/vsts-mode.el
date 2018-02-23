@@ -159,5 +159,12 @@ of fetching from the API (temporary solution)."
   (vsts/set-credentials)
   (bui-get-display-entries 'builds 'list))
 
+;;;###autoload
+(defun vsts/show-pullrequests ()
+  "Shows list of pull requests in `vsts-repository'"
+  (interactive)
+  (vsts/set-credentials)
+  (bui-get-display-entries 'vsts-pullrequests 'list))
+
 (provide 'vsts-mode)
 ;;; vsts-mode.el ends here
