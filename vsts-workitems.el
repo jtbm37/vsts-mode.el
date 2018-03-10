@@ -70,7 +70,8 @@ When `relation-p' is non-nil, it will include the work item relations."
 in work item `wi'"
   (when-let ((relations (alist-get 'relations wi))
 	     (rel-wis (remove-if-not '(lambda (x) (or (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Forward")
-						 (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Reverse")))
+						 (string-equal (alist-get 'rel x) "System.LinkTypes.Hierarchy-Reverse")
+						 (string-equal (alist-get 'rel x) "System.LinkTypes.Related")))
 				     relations))
 	     (ids (mapcar 'vsts/get-relation-work-item-id rel-wis))
 	     (wis (vsts/get-work-items ids '("System.Title" "System.State" "System\.AssignedTo"))))
