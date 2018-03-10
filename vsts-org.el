@@ -39,6 +39,7 @@
     (define-key org-vsts-map (kbd "C-c vB") 'org-vsts-browse-related)
     (define-key org-vsts-map (kbd "C-c vc") 'org-vsts-show-pr-changes)
     (define-key org-vsts-map (kbd "C-c vs") 'org-vsts-change-state)
+    (define-key org-vsts-map (kbd "C-c va") 'org-vsts-assign)
     org-vsts-map))
 
 ;;;###autoload
@@ -65,6 +66,12 @@ Nil argument turns mode off.
   (interactive)
   (when-let ((id (alist-get 'id vsts/current-wi)))
     (vsts/update-work-item-state (number-to-string id))))
+
+(defun org-vsts-assign ()
+  (interactive)
+  (when-let ((id (alist-get 'id vsts/current-wi)))
+    (vsts/assign-work-item (number-to-string id))))
+
 
 (defun org-vsts-browse-related ()
   (interactive)
