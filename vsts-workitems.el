@@ -79,6 +79,16 @@ in work item `wi'"
 	       (push (assoc 'id x) (alist-get 'fields x)))
 	    wis)))
 
+(defun vsts/get-related-pullrequests (wi)
+  "Returns a list of the related work items
+in work item `wi'"
+  (when-let ((relations (alist-get 'relations wi))
+	     (rel-prs (remove-if-not '(lambda (x) (and (string-equal (alist-get 'rel x) "ArtifactLink")
+						       (string-equal (alist-get 'name (alist-get 'attributes x)) "Pull Request")))
+				     relations))
+	     (prs (mapcar (lambda (x) (vsts/git-get-pullrequests (-last-item (s-split "%2f" (alist-get 'url x))))) rel-prs)))
+    prs))
+
 (defun vsts/get-relation-work-item-id (relation)
   "Returns the id of the relation's work item"
   (let* ((url (alist-get 'url relation))

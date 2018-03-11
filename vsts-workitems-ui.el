@@ -103,13 +103,16 @@
 
 (defun vsts/get-work-item-for-display (id)
   (let* ((wi (vsts/get-work-item-info id))
-	 (related (vsts/get-related-work-items wi))
+	 (related-wis (vsts/get-related-work-items wi))
+	 (related-prs (vsts/get-related-pullrequests wi))
 	 (comments (assoc 'comments (vsts/get-workitem-comments id))))
     (push (cons 'url (vsts/get-web-url (format "/_workitems/edit/%s" id))) wi)
     (push comments wi)
-    (when (and related (> (length related) 0))
+    (when (and related-wis (> (length related-wis) 0))
       (assq-delete-all 'relations wi)
-      (push (cons 'relations related) wi))
+      (push (cons 'relations related-wis) wi))
+    (when (and related-prs (> (length related-prs) 0))
+      (push (cons 'pullrequests related-prs) wi))
     wi))
 
 (bui-define-groups workitems
