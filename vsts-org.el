@@ -23,6 +23,7 @@
 ;; Minor mode for org mode
 
 ;;; Code:
+;;* Requires
 (require 'org)
 
 (defgroup org-vsts nil
@@ -32,6 +33,7 @@
 
 (defvar org-vsts-mode-hook nil)
 
+;;* Vars
 (defvar org-vsts-mode-map
   (let ((org-vsts-map (make-sparse-keymap)))
     (define-key org-vsts-map (kbd "C-c vr") 'org-vsts-visit-related)
@@ -41,6 +43,13 @@
     (define-key org-vsts-map (kbd "C-c vs") 'org-vsts-change-state)
     (define-key org-vsts-map (kbd "C-c va") 'org-vsts-assign)
     org-vsts-map))
+
+(defvar org-vsts-previous-item nil
+  "Holds previously visited work item.
+This is set when visiting a related item
+via `org-vsts-visit-related'")
+
+;;* Mode
 
 ;;;###autoload
 (define-minor-mode org-vsts-mode
@@ -56,7 +65,7 @@ Nil argument turns mode off.
 
   (if org-vsts-mode
       (run-mode-hooks 'org-vsts-mode-hook)))
-
+;;* Navigation
 (defun org-vsts-browse ()
   (interactive)
   (when-let ((url (alist-get 'url vsts/current-wi)))
@@ -72,6 +81,10 @@ Nil argument turns mode off.
   (when-let ((id (alist-get 'id vsts/current-wi)))
     (vsts/assign-work-item (number-to-string id))))
 
+(defun org-vsts-visit-previous-item ()
+  (interactive)
+  (when-let ((id (alist-get 'id org-vsts-previous-item)))
+    (vsts/show-workitem (number-to-string id))))
 
 (defun org-vsts-browse-related ()
   (interactive)
@@ -101,9 +114,13 @@ Nil argument turns mode off.
 	  (magit-merge-preview branch)
 	(user-error (format "Current branch is not %s" dest))))))
 
+;;* Buffer creation
 (defun vsts/create-wi-org-buffer (wi)
   "Creates a temp org-mode buffer
 with all `wi' details"
+  (when-let ((buffer (get-buffer "*VSTS WORK ITEM*"))
+	     (curr-wi (buffer-local-value 'vsts/current-wi buffer)))
+    (setq org-vsts-previous-item curr-wi))
   (with-current-buffer-window "*VSTS WORK ITEM*"
 			      nil
 			      nil
