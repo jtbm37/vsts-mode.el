@@ -216,10 +216,12 @@
   "Display 'info' for builds in ids"
   (bui-get-display-entries 'builds 'info (bui-list-current-entry)))
 
-(defun vsts/set-builds-list-max-items ()
+(defun vsts/set-builds-list-max-items (&optional max)
   "Prompts to set `vsts-builds-list-top'"
-  (interactive)
-  (setq vsts-builds-list-top (read-number (format "Top (%s): " vsts-builds-list-top))))
+  (interactive "nTop: ")
+  (when (not (= max vsts-builds-list-top))
+    (setq vsts-builds-list-top max)
+    (revert-buffer nil t)))
 
 (let ((map builds-list-mode-map))
   (define-key map (kbd "q") 'quit-window)
