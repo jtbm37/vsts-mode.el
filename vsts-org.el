@@ -202,6 +202,7 @@ with all `wi' details"
 								(name (alist-get 'displayName author))
 								(date (alist-get 'revisedDate cmt)))
 						      (insert (format "*** %s on %s: " name date))
+						      (insert hard-newline)
 						      (vsts-insert-html text nil)))))
 				(org-entry-put (point) "type" (alist-get 'System.WorkItemType wi))
 				(org-entry-put (point) "id" (int-to-string (alist-get 'id wi)))
