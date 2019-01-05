@@ -42,6 +42,7 @@
     (define-key org-vsts-map (kbd "C-c vc") 'org-vsts-show-pr-changes)
     (define-key org-vsts-map (kbd "C-c vs") 'org-vsts-change-state)
     (define-key org-vsts-map (kbd "C-c va") 'org-vsts-assign)
+    (define-key org-vsts-map (kbd "C-c vm") 'org-vsts-add-comment)
     org-vsts-map))
 
 (defvar org-vsts-previous-item nil
@@ -80,6 +81,11 @@ Nil argument turns mode off.
   (interactive)
   (when-let ((id (alist-get 'id vsts/current-wi)))
     (vsts/assign-work-item (number-to-string id))))
+
+(defun org-vsts-add-comment ()
+  (interactive)
+  (when-let ((id (alist-get 'id vsts/current-wi)))
+    (vsts/add-comment (number-to-string id))))
 
 (defun org-vsts-visit-previous-item ()
   (interactive)

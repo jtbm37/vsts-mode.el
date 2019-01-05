@@ -199,6 +199,30 @@ with `state'"
 	(message "Unassigned wi %s from %s" id old-assignee)
       (user-error "Could not assign work item %s" id))))
 
+(defun vsts/add-comment (id)
+  (interactive "nId: ")
+  (when (numberp id)
+    (setq id (number-to-string id)))
+  (require 'vsts-comment)
+  (let ((buffer (get-buffer-create "*VSTS COMMENT*")))
+    (with-current-buffer buffer
+      (vsts-comment-mode 1)
+      (setq-local work-item-id id))
+    (display-buffer buffer)))
+
+(defun vsts/submit-comment ()
+  (interactive)
+  (when-let* ((url (concat (vsts/get-url (format "%s/%s" vsts-workitems-api work-item-id) nil "1.0")))
+	      (wi (elt (vsts/get-work-items (list work-item-id)) 0))
+	      (rev (alist-get 'rev wi))
+	      (fields (alist-get 'fields wi))
+	      (data `(((op . "add")
+		       (path . "/fields/System.History")
+		       (value . ,(buffer-string))))))
+    (if (and (yes-or-no-p (format "Submit comment to %s" work-item-id)) (= (request-response-status-code (vsts--submit-request url nil "PATCH" data nil)) 200))
+	(progn (message  "Comment submitted")
+	       (kill-buffer))
+      (user-error "Could not submit comment to work item %s" work-item-id))))
 
 (provide 'vsts-workitems)
 ;;; vsts-workitems.el ends here
