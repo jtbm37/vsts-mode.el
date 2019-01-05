@@ -38,6 +38,12 @@
 (defvar vsts-builds nil
   "Contains all builds for the builds page")
 
+(defcustom vsts-builds-filters '()
+  "Defines filters for the builds grid.
+Add any predicate function that takes the entry as parameter."
+  :type 'sexp
+  :group 'vsts)
+
 (defun vsts/get-builds ()
   "Displays all builds"
   (let ((base-url (vsts/get-url vsts-builds-api t))
@@ -102,25 +108,17 @@
   :get-entries-function '(lambda ()
 			   ;; (message "get builds")
 			   (vsts/get-builds))
-  :filter-predicates '(builds-build-current-project?
-		       builds-build-repository?)
-  :format '((result nil 1 t) (name nil 33 t)
-			   (buildNumber nil 33 t)
-			   (sourceBranch nil 23 t)
-			   (sourceVersion nil 10 t)
-			   (status nil 10 t)
-			   (completed nil 13 t)
-			   (requestedBy nil 20 t))
+  :filter-predicates vsts-builds-filters
+  :format '((result nil 5 t)
+	    (name nil 33 t)
+	    (buildNumber nil 33 t)
+	    (sourceBranch nil 23 t)
+	    (sourceVersion nil 10 t)
+	    (status nil 10 t)
+	    (completed nil 13 t)
+	    (requestedBy nil 20 t))
   ;; :sort-key '(name)
   )
-
-(defun builds-build-current-project? (entry)
-  "Returns t if builds is in current project"
-  t)
-
-(defun builds-build-current-repository? (entry)
-  "Returns t if builds is in current repository"
-  t)
 
 (bui-define-interface builds info
   :get-entries-function #'builds-info-entries-function
